@@ -8,8 +8,13 @@ An AI-powered English language tutor built with **Python**, **LangChain**, **Lan
 - **Vocabulary Building** — Suggests new words and phrases during conversation
 - **Writing Improvement** — Provides suggestions to make your English more natural
 - **Word Definitions** — Look up any English word with examples
+- **Pronunciation Guide** — Get pronunciation tips for any English word
+- **Interactive Exercises** — Fill-in-the-blank, multiple choice, sentence correction
+- **Progress Tracking** — Track your messages, corrections, and exercise scores
+- **Streamlit Web UI** — Beautiful web interface with chat, exercises, and history
 - **Interactive CLI** — Chat directly in your terminal
 - **REST API** — FastAPI web server for integration with other apps
+- **SQLite Database** — Persistent conversation history and exercise results
 - **Conversation Memory** — Remembers context within a session
 
 ## Architecture
@@ -18,19 +23,23 @@ An AI-powered English language tutor built with **Python**, **LangChain**, **Lan
 english-tutor-ai/
 ├── src/
 │   ├── agents/
-│   │   └── tutor.py          # LangGraph agent with grammar check → response flow
+│   │   └── tutor.py              # LangGraph agent with grammar check → response flow
 │   ├── prompts/
-│   │   └── tutor_prompts.py  # System prompts for the tutor
+│   │   └── tutor_prompts.py      # System prompts for the tutor
 │   ├── schemas/
-│   │   └── models.py         # Pydantic data models
+│   │   └── models.py             # Pydantic data models
 │   ├── tools/
-│   │   └── grammar_tools.py  # LangChain tools (grammar, vocabulary, improvement)
-│   ├── database/              # (Future: conversation persistence)
-│   ├── main.py               # Interactive CLI chat
-│   └── api.py                # FastAPI web server
+│   │   ├── grammar_tools.py      # Grammar checking & vocabulary tools
+│   │   ├── pronunciation_tools.py # Pronunciation guide tool
+│   │   └── exercise_tools.py     # Exercise generation tools
+│   ├── database/
+│   │   └── db.py                 # SQLite database for persistence
+│   ├── main.py                   # Interactive CLI chat
+│   ├── api.py                    # FastAPI web server
+│   └── web_ui.py                 # Streamlit web interface
 ├── tests/
-│   └── test_tutor.py         # Unit tests
-├── data/                      # (Future: learning materials)
+│   └── test_tutor.py             # Unit tests
+├── data/                          # SQLite database stored here
 ├── requirements.txt
 ├── .env.example
 └── README.md
@@ -40,13 +49,13 @@ english-tutor-ai/
 
 ```
 User Input → [Check Grammar] → [Generate Response] → Output
-                                       ↓ (if tools needed)
-                                   [Tool Node] → [Generate Response] → Output
+                                        ↓
+                              [Save to SQLite DB]
 ```
 
 1. **Check Grammar Node**: Analyzes user's text for grammar errors
 2. **Generate Response Node**: Creates a tutor response incorporating grammar feedback
-3. **Tool Node**: Executes tools (grammar check, word definition, improvement suggestions) when the LLM decides they're needed
+3. **Database**: All messages and corrections are persisted to SQLite
 
 ## Prerequisites
 
@@ -162,7 +171,20 @@ The verb "go" is irregular — its past tense is "went", not "goes" or "goed".
 "I **attended** school yesterday" for a more formal tone!
 ```
 
-### Option 2: FastAPI Web Server
+### Option 2: Streamlit Web UI (Recommended)
+
+```bash
+streamlit run src/web_ui.py
+```
+
+This opens a beautiful web interface at http://localhost:8501 with:
+- **💬 Chat** — Interactive conversation with the tutor
+- **📝 Exercises** — Fill-in-the-blank, multiple choice, sentence correction
+- **🔤 Pronunciation** — Get pronunciation guides for any word
+- **📊 Progress** — Track your learning stats
+- **📚 History** — Browse and load past conversations
+
+### Option 3: FastAPI Web Server
 
 ```bash
 uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload

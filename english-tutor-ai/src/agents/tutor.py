@@ -134,7 +134,7 @@ def build_tutor_graph() -> StateGraph:
 # Compile the graph once at module level
 tutor_agent = build_tutor_graph()
 
-# In-memory conversation store (use a database for production)
+# In-memory conversation store (also persisted to SQLite)
 conversation_store: dict[str, list[dict]] = {}
 
 
@@ -148,8 +148,13 @@ async def chat(message: str, session_id: str | None = None) -> dict:
     Returns:
         A dict with the tutor's response, session_id, and metadata.
     """
+    from src.database.db import create_session, save_message
+
     if not session_id:
-        session_id = str(uuid.uuid4())
+        session_id = create_session()
+
+    # Save user message to database
+    save_message(session_id, "human", message)
 
     previous_messages = conversation_store.get(session_id, [])
     all_messages = previous_messages + [HumanMessage(content=message)]
@@ -166,6 +171,9 @@ async def chat(message: str, session_id: str | None = None) -> dict:
     result = await tutor_agent.ainvoke(initial_state)
 
     conversation_store[session_id] = list(result["messages"])
+
+    # Save tutor response to database
+    save_message(session_id, "ai", result["tutor_response"])
 
     return {
         "response": result["tutor_response"],
