@@ -1,6 +1,5 @@
 """English Tutor AI Agent built with LangGraph."""
 
-import json
 import logging
 import uuid
 from typing import Annotated
@@ -9,16 +8,11 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
-from langgraph.prebuilt import ToolNode
 from typing_extensions import TypedDict
 
 from src.prompts.tutor_prompts import TUTOR_SYSTEM_PROMPT
 from src.schemas.models import GrammarCheckResult
-from src.tools.grammar_tools import (
-    check_grammar,
-    get_word_definition,
-    suggest_improvement,
-)
+from src.tools.grammar_tools import check_grammar
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +26,6 @@ class AgentState(TypedDict):
     grammar_feedback: str
     tutor_response: str
     message_count: int
-
-
-# Tools available to the agent
-tools = [check_grammar, get_word_definition, suggest_improvement]
 
 
 def create_llm(temperature: float = 0.7) -> ChatOllama:
@@ -74,9 +64,8 @@ def check_user_grammar(state: AgentState) -> AgentState:
 
 
 def generate_response(state: AgentState) -> AgentState:
-    """Generate the tutor's response using the LLM."""
+    """Generate the tutor's response using the LLM (without tool binding)."""
     llm = create_llm()
-    llm_with_tools = llm.bind_tools(tools)
 
     messages = list(state["messages"])
 
@@ -97,7 +86,7 @@ def generate_response(state: AgentState) -> AgentState:
         messages.append(SystemMessage(content=context_note))
 
     try:
-        response = llm_with_tools.invoke(messages)
+        response = llm.invoke(messages)
 
         full_response = response.content
         if grammar_feedback:
@@ -123,34 +112,21 @@ def generate_response(state: AgentState) -> AgentState:
         }
 
 
-def should_use_tools(state: AgentState) -> str:
-    """Determine if the last message requires tool usage."""
-    messages = state.get("messages", [])
-    if not messages:
-        return "end"
-
-    last_message = messages[-1]
-    if isinstance(last_message, AIMessage) and last_message.tool_calls:
-        return "tools"
-    return "end"
-
-
 def build_tutor_graph() -> StateGraph:
-    """Build and compile the LangGraph for the English Tutor agent."""
+    """Build and compile the LangGraph for the English Tutor agent.
+
+    Flow: User Input → [Check Grammar] → [Generate Response] → Output
+    Grammar checking is done as a dedicated node (not via LLM tool calling),
+    so this works with models like Phi-3 that don't support tool binding.
+    """
     graph = StateGraph(AgentState)
 
     graph.add_node("check_grammar", check_user_grammar)
     graph.add_node("generate_response", generate_response)
-    graph.add_node("tools", ToolNode(tools))
 
     graph.set_entry_point("check_grammar")
     graph.add_edge("check_grammar", "generate_response")
-    graph.add_conditional_edges(
-        "generate_response",
-        should_use_tools,
-        {"tools": "tools", "end": END},
-    )
-    graph.add_edge("tools", "generate_response")
+    graph.add_edge("generate_response", END)
 
     return graph.compile()
 
