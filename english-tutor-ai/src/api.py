@@ -1,5 +1,10 @@
 """FastAPI web server for the English Tutor AI Agent."""
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import logging
 
 from fastapi import FastAPI, HTTPException
