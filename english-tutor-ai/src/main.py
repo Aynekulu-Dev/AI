@@ -1,8 +1,12 @@
 """Main entry point for the English Tutor AI Agent."""
 
-import logging
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import asyncio
+import logging
 
 from src.agents.tutor import chat
 from src.schemas.models import ChatMessage
