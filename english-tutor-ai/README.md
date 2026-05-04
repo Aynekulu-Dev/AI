@@ -51,6 +51,7 @@ User Input → [Check Grammar] → [Generate Response] → Output
 ## Prerequisites
 
 - **Python 3.10+**
+- **Conda** (Miniconda or Anaconda) — [Install Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 - **Ollama** installed and running ([Install Ollama](https://ollama.com/download))
 - **Phi-3** model pulled in Ollama
 
@@ -77,14 +78,30 @@ ollama pull phi3
 ollama serve
 ```
 
-### 4. Clone & Install Dependencies
+### 4. Clone & Install Dependencies (Conda)
 
 ```bash
 # Clone the project
-git clone <your-repo-url>
+git clone https://github.com/Aynekulu-Dev/AI.git
+cd AI/english-tutor-ai
+
+# Create a conda environment
+conda create -n english-tutor python=3.10 -y
+
+# Activate the environment
+conda activate english-tutor
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+<details>
+<summary>Alternative: Using venv (without Conda)</summary>
+
+```bash
 cd english-tutor-ai
 
-# Create a virtual environment (recommended)
+# Create a virtual environment
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 # or: venv\Scripts\activate  # Windows
@@ -92,6 +109,8 @@ source venv/bin/activate  # Linux/Mac
 # Install dependencies
 pip install -r requirements.txt
 ```
+
+</details>
 
 ### 5. Configure Environment (Optional)
 
@@ -171,6 +190,9 @@ curl -X POST http://localhost:8000/chat \
 ## Running Tests
 
 ```bash
+# Make sure conda environment is active
+conda activate english-tutor
+
 pip install pytest
 pytest tests/ -v
 ```
